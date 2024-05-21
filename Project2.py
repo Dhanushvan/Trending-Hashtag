@@ -1,3 +1,4 @@
+from collections import Counter
 import streamlit as st
 import boto3
 import uuid
@@ -25,7 +26,6 @@ dynamodb = boto3.resource(
 
 #Interface creation
 st.title('SnapGram')
-
 st.sidebar.header("Home")
 image=st.sidebar.file_uploader("Drop your image here",accept_multiple_files=True)
 text=st.sidebar.text_area("write caption.....")
@@ -50,10 +50,10 @@ if button1:
         FunctionName='Snapgram',
         Payload=var1
     )
-#Extracting hashtags from post and inserting into Dynamodb  
+#Extracting hashtags from post and inserting into Dynamodb table
+
     hash_list = []
     split_list=var1.split("\"")
-    # st.write(split_list)
     split_list_hash=(split_list[7].split(" "))
     for word in split_list_hash:
        if word[0]=='#':
@@ -63,12 +63,18 @@ if button1:
         
         table.put_item(Item={'Post_id':split_list[3],'Hashtag': hashtag}) 
 
-#Retrieval of hashtags from table
+#Retrieval of trending hashtags from table in descending order
+
 def getColumn1Items():
     table = dynamodb.Table('Trending_Hashtag')
     response = table.scan()
-    return ([i['Hashtag'] for i in response['Items']])
+    #return ([i['Hashtag'] for i in response['Items']])
+    tag_list=[i['Hashtag'] for i in response['Items']]
+    output = dict(Counter(tag_list).most_common())
+    return output
 
+#on click of button trending hashtags are displayed
+   
 if button2:
     st.write(getColumn1Items())
 
